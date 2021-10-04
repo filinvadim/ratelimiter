@@ -8,7 +8,7 @@ import (
 
 func TestLimiterAccuracy(t *testing.T) {
 	limit := 8
-	window := 5*time.Second
+	window := 5 * time.Second
 	l := NewLimiter(context.TODO(), uint32(limit), window)
 	defer l.Close()
 
@@ -20,8 +20,8 @@ func TestLimiterAccuracy(t *testing.T) {
 		for i := 0; i < attempts; i++ {
 			l.Limit(1, func() {
 				t.Logf("f() №%d %s", i, time.Now().Sub(started).String())
+				elCh <- time.Now().Sub(started)
 			})
-			elCh <- time.Now().Sub(started)
 		}
 	}(elapsedChan)
 
@@ -41,7 +41,7 @@ func TestLimiterAccuracy(t *testing.T) {
 
 func TestConcurrentLimiterAccuracy(t *testing.T) {
 	limit := 8
-	window := 5*time.Second
+	window := 5 * time.Second
 
 	l := NewLimiter(context.TODO(), uint32(limit), window)
 	defer l.Close()
@@ -58,12 +58,9 @@ func TestConcurrentLimiterAccuracy(t *testing.T) {
 		}()
 	}
 
-	for i := 0; i < attempts; i++ {
-		select {
-		case dur := <-elapsedChan:
-			if dur.Round(time.Second) == window {
-				return
-			}
+	for dur := range elapsedChan {
+		if dur.Round(time.Second) == window {
+			return
 		}
 	}
 	t.Fatal("limiter is inaccurate")

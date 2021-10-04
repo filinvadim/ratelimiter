@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func TestAttributeMapGetSetDelete(t *testing.T) {
+func TestKeyLimiterGetSetDelete(t *testing.T) {
 	key := "test"
 	l := NewKeyLimiter(context.TODO())
 	l.RegisterKey(key, 5, time.Second)
@@ -15,13 +15,13 @@ func TestAttributeMapGetSetDelete(t *testing.T) {
 	}
 	l.DeleteKeys("test")
 	if l.HasKey(key) {
-		t.Fatal("expected nonexisting key:", key)
+		t.Fatal("expected nonexistent key:", key)
 	}
 }
 
 func TestKeyLimiterAccuracy(t *testing.T) {
 	limit := 8
-	window := 5*time.Second
+	window := 5 * time.Second
 
 	l := NewKeyLimiter(context.TODO())
 	defer l.DeleteKeys()
@@ -56,7 +56,7 @@ func TestKeyLimiterAccuracy(t *testing.T) {
 
 func TestConcurrentKeyLimiterAccuracy(t *testing.T) {
 	limit := 8
-	window := 5*time.Second
+	window := 5 * time.Second
 
 	l := NewKeyLimiter(context.TODO())
 	defer l.DeleteKeys()
@@ -74,12 +74,9 @@ func TestConcurrentKeyLimiterAccuracy(t *testing.T) {
 		}()
 	}
 
-	for i := 0; i < attempts; i++ {
-		select {
-		case dur := <-elapsedChan:
-			if dur.Round(time.Second) == window {
-				return
-			}
+	for dur := range elapsedChan {
+		if dur.Round(time.Second) == window {
+			return
 		}
 	}
 	t.Fatal("limiter is inaccurate")
