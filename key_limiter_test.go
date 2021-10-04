@@ -34,7 +34,6 @@ func TestKeyLimiterAccuracy(t *testing.T) {
 		started := time.Now()
 		for i := 0; i < attempts; i++ {
 			l.LimitKey("test", 1, func() {
-				t.Logf("f() №%d %s", i, time.Now().Sub(started).String())
 				elCh <- time.Now().Sub(started)
 			})
 		}

@@ -29,6 +29,7 @@ func NewLimiter(ctx context.Context, limit uint32, interval time.Duration) *Limi
 		limit:       limit,
 		ctx:         ctx,
 		stopChan:    make(chan struct{}),
+		nextWindow:  time.Now().Add(interval),
 	}
 
 	go limiter.startWindowCounting()
@@ -53,7 +54,6 @@ func (l *Limiter) Limit(weight uint32, fn func()) {
 }
 
 func (l *Limiter) startWindowCounting() {
-	l.nextWindow = time.Now().Add(l.interval)
 	for now := range l.limitTick {
 		select {
 		case <-l.stopChan:
