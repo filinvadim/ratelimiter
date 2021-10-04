@@ -33,14 +33,14 @@ func (kl *KeyLimiter) RegisterKey(key string, limit uint32, interval time.Durati
 	kl.mx.Unlock()
 }
 
-func (kl *KeyLimiter) LimitKey(key string, fn func()) {
+func (kl *KeyLimiter) LimitKey(key string, weight uint32, fn func()) {
 	kl.mx.Lock()
-
 	limiter, ok := kl.limiters[key]
-	if ok && fn != nil {
-		limiter.Limit(fn)
-	}
 	kl.mx.Unlock()
+
+	if ok && fn != nil {
+		limiter.Limit(weight, fn)
+	}
 }
 
 func (kl *KeyLimiter) DeleteKeys(keys ...string) {

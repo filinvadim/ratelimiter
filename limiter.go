@@ -2,56 +2,58 @@ package ratelimiter
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
 )
 
 type Limiter struct {
-	limitTick chan struct{}
-	interval  time.Duration
-	taskNum   uint32
-	lock      *sync.RWMutex
-	limit     uint32
-	ctx       context.Context
+	limitTick   <-chan time.Time
+	interval    time.Duration
+	taskNum     uint32
+	nextWindow  time.Time
+	limiterLock *sync.Mutex
+	limit       uint32
 
-	stopChan chan struct{}
+	innerLock *sync.RWMutex
+	ctx       context.Context
+	stopChan  chan struct{}
 }
 
 func NewLimiter(ctx context.Context, limit uint32, interval time.Duration) *Limiter {
 	limiter := &Limiter{
-		limitTick: make(chan struct{}, 1),
-		lock:      new(sync.RWMutex),
-		interval: interval,
-		limit:     limit,
-		ctx:       ctx,
-		stopChan:  make(chan struct{}),
+		limitTick:   time.Tick(interval),
+		limiterLock: new(sync.Mutex),
+		innerLock:   new(sync.RWMutex),
+		interval:    interval,
+		limit:       limit,
+		ctx:         ctx,
+		stopChan:    make(chan struct{}),
 	}
 
-	go limiter.startLimiting()
+	go limiter.startWindowCounting()
 	return limiter
 }
 
-func (l *Limiter) Limit(fn func()) {
-	l.limitTick <- struct{}{}
+func (l *Limiter) Limit(weight uint32, fn func()) {
+	if weight == 0 {
+		weight = 1
+	}
 
-	l.lock.RLock()
+	if atomic.LoadUint32(&l.taskNum) >= atomic.LoadUint32(&l.limit) {
+		l.limiterLock.Lock()
+		l.innerLock.RLock()
+		time.Sleep(l.nextWindow.Sub(time.Now()))
+		l.innerLock.RUnlock()
+		atomic.StoreUint32(&l.taskNum, 0)
+		l.limiterLock.Unlock()
+	}
 	fn()
-	atomic.AddUint32(&l.taskNum, 1)
-	l.lock.RUnlock()
+	atomic.AddUint32(&l.taskNum, 1*weight)
 }
 
-func (l *Limiter) startLimiting() {
-	go func() {
-		tick := time.Tick(l.interval)
-		for range tick {
-			if _, ok := <-l.stopChan; !ok {
-				return
-			}
-			l.limitTick <- struct{}{}
-		}
-	}()
+func (l *Limiter) startWindowCounting() {
+	l.nextWindow = time.Now().Add(l.interval)
 	for range l.limitTick {
 		select {
 		case <-l.stopChan:
@@ -59,13 +61,9 @@ func (l *Limiter) startLimiting() {
 		case <-l.ctx.Done():
 			return
 		default:
-			fmt.Println(l.taskNum, l.limit)
-			if atomic.LoadUint32(&l.taskNum) >= atomic.LoadUint32(&l.limit) {
-				l.lock.Lock()
-				time.Sleep(l.interval)
-				atomic.StoreUint32(&l.taskNum, 0)
-				l.lock.Unlock()
-			}
+			l.innerLock.Lock()
+			l.nextWindow = time.Now().Add(l.interval)
+			l.innerLock.Unlock()
 		}
 	}
 }
