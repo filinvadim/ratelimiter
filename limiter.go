@@ -8,7 +8,7 @@ import (
 )
 
 type Limiter struct {
-	limitTick   <-chan time.Time
+	limitTicker *time.Ticker
 	interval    time.Duration
 	taskNum     uint32
 	nextWindow  time.Time
@@ -22,7 +22,7 @@ type Limiter struct {
 
 func NewLimiter(ctx context.Context, limit uint32, interval time.Duration) *Limiter {
 	limiter := &Limiter{
-		limitTick:   time.Tick(interval),
+		limitTicker: time.NewTicker(interval),
 		limiterLock: new(sync.Mutex),
 		innerLock:   new(sync.RWMutex),
 		interval:    interval,
@@ -54,7 +54,10 @@ func (l *Limiter) Limit(weight uint32, fn func()) {
 }
 
 func (l *Limiter) startWindowCounting() {
-	for now := range l.limitTick {
+	defer l.limitTicker.Stop()
+	defer close(l.stopChan)
+
+	for now := range l.limitTicker.C {
 		select {
 		case <-l.stopChan:
 			return
@@ -69,5 +72,9 @@ func (l *Limiter) startWindowCounting() {
 }
 
 func (l *Limiter) Close() {
-	close(l.stopChan)
+	select {
+	case <-l.ctx.Done():
+	default:
+		l.stopChan <- struct{}{}
+	}
 }
