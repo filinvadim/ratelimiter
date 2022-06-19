@@ -55,15 +55,14 @@ func (l *Limiter) Limit(weight uint32, fn func()) {
 
 func (l *Limiter) startWindowCounting() {
 	defer l.limitTicker.Stop()
-	defer close(l.stopChan)
 
-	for now := range l.limitTicker.C {
+	for {
 		select {
 		case <-l.stopChan:
 			return
 		case <-l.ctx.Done():
 			return
-		default:
+		case now := <- l.limitTicker.C:
 			l.innerLock.Lock()
 			l.nextWindow = now.Add(l.interval)
 			l.innerLock.Unlock()
@@ -72,9 +71,5 @@ func (l *Limiter) startWindowCounting() {
 }
 
 func (l *Limiter) Close() {
-	select {
-	case <-l.ctx.Done():
-	default:
-		l.stopChan <- struct{}{}
-	}
+  close(l.stopChan)
 }
