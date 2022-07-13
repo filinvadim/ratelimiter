@@ -40,6 +40,10 @@ func (kl *KeyLimiter) LimitKey(key string, weight uint32, fn func()) {
 
 	if ok && fn != nil {
 		limiter.Limit(weight, fn)
+		return
+	}
+	if fn != nil {
+		fn()
 	}
 }
 
