@@ -5,7 +5,7 @@ A generic thread-safe rate limiter library for Golang inspired but unsatisfied b
 This library can be used in your codebase to rate-limit any API. 
 
 ### Installation:
-The package can be installed as a Go module.
+The package can be installed as a Go 1.17 module.
 
 ```
 go get github.com/filinvadim/ratelimiter
