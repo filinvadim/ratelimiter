@@ -40,7 +40,7 @@ func (l *Limiter) Limit(weight uint32, fn func()) {
 	if weight == 0 {
 		weight = 1
 	}
-
+	atomic.AddUint32(&l.taskNum, 1*weight)
 	if atomic.LoadUint32(&l.taskNum) >= atomic.LoadUint32(&l.limit) {
 		l.limiterLock.Lock()
 		l.innerLock.RLock()
@@ -50,7 +50,7 @@ func (l *Limiter) Limit(weight uint32, fn func()) {
 		l.limiterLock.Unlock()
 	}
 	fn()
-	atomic.AddUint32(&l.taskNum, 1*weight)
+	
 }
 
 func (l *Limiter) startWindowCounting() {
