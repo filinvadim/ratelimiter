@@ -46,7 +46,6 @@ func (l *Limiter) Limit(weight uint32, fn func()) {
 		l.innerLock.RLock()
 		time.Sleep(l.nextWindow.Sub(time.Now()))
 		l.innerLock.RUnlock()
-		atomic.StoreUint32(&l.taskNum, 0)
 		l.limiterLock.Unlock()
 	}
 	fn()
@@ -66,6 +65,7 @@ func (l *Limiter) startWindowCounting() {
 			l.innerLock.Lock()
 			l.nextWindow = now.Add(l.interval)
 			l.innerLock.Unlock()
+			atomic.StoreUint32(&l.taskNum, 0)
 		}
 	}
 }
