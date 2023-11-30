@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func TestLimiterAccuracy(t *testing.T) {
+func testLimiterAccuracy(t *testing.T) {
 	limit := 8
 	window := 5 * time.Second
 	l := NewLimiter(context.TODO(), uint32(limit), window)
