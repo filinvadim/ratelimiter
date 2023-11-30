@@ -47,6 +47,17 @@ func (kl *KeyLimiter) LimitKey(key string, weight uint32, fn func()) {
 	}
 }
 
+func (kl *KeyLimiter) IsLocked(key string) bool {
+	kl.mx.Lock()
+	limiter, ok := kl.limiters[key]
+	kl.mx.Unlock()
+	if !ok {
+		return false
+	}
+
+	return limiter.IsLocked()
+}
+
 func (kl *KeyLimiter) DeleteKeys(keys ...string) {
 	kl.mx.Lock()
 	defer kl.mx.Unlock()

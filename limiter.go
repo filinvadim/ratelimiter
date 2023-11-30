@@ -8,10 +8,8 @@ import (
 )
 
 type Limiter struct {
-	limitTicker *time.Ticker
 	interval    time.Duration
 	taskNum     uint32
-	nextWindow  time.Time
 	limiterLock *sync.Mutex
 	limit       uint32
 
@@ -22,17 +20,14 @@ type Limiter struct {
 
 func NewLimiter(ctx context.Context, limit uint32, interval time.Duration) *Limiter {
 	limiter := &Limiter{
-		limitTicker: time.NewTicker(interval),
 		limiterLock: new(sync.Mutex),
 		innerLock:   new(sync.RWMutex),
 		interval:    interval,
 		limit:       limit,
 		ctx:         ctx,
 		stopChan:    make(chan struct{}),
-		nextWindow:  time.Now().Add(interval),
 	}
 
-	go limiter.startWindowCounting()
 	return limiter
 }
 
@@ -44,32 +39,17 @@ func (l *Limiter) Limit(weight uint32, fn func()) {
 	if atomic.LoadUint32(&l.taskNum) >= atomic.LoadUint32(&l.limit) {
 		l.limiterLock.Lock()
 		l.innerLock.RLock()
-		time.Sleep(l.nextWindow.Sub(time.Now()))
+		time.Sleep(l.interval)
 		l.innerLock.RUnlock()
 		l.limiterLock.Unlock()
 	}
 	fn()
-	
 }
 
-func (l *Limiter) startWindowCounting() {
-	defer l.limitTicker.Stop()
-
-	for {
-		select {
-		case <-l.stopChan:
-			return
-		case <-l.ctx.Done():
-			return
-		case now := <- l.limitTicker.C:
-			l.innerLock.Lock()
-			l.nextWindow = now.Add(l.interval)
-			l.innerLock.Unlock()
-			atomic.StoreUint32(&l.taskNum, 0)
-		}
-	}
+func (l *Limiter) IsLocked() bool {
+	return atomic.LoadUint32(&l.taskNum) >= atomic.LoadUint32(&l.limit)
 }
 
 func (l *Limiter) Close() {
-  close(l.stopChan)
+	close(l.stopChan)
 }
