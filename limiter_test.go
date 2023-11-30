@@ -31,6 +31,7 @@ func TestLimiterAccuracy(t *testing.T) {
 				if dur.Round(time.Second) == window {
 					return
 				}
+				t.Log(dur.Round(time.Second), window)
 			}
 		}
 	}
