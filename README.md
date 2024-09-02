@@ -1,11 +1,11 @@
-# ratelimiter
+# Sliding window log rate limiter
 
-A generic thread-safe rate limiter library for Golang inspired but unsatisfied by https://github.com/Narasimha1997/ratelimiter and https://github.com/uber-go/ratelimit
+A thread-safe rate limiter library for Golang inspired but unsatisfied by https://github.com/Narasimha1997/ratelimiter and https://github.com/uber-go/ratelimit
 
 This library can be used in your codebase to rate-limit any API. 
 
 ### Installation:
-The package can be installed as a Go 1.17 module.
+The package can be installed as a Go 1.22 module.
 
 ```
 go get github.com/filinvadim/ratelimiter
