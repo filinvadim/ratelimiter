@@ -12,10 +12,10 @@ go get github.com/filinvadim/ratelimiter
 ```
 
 ### Using the library:
-There are two types of rate-limiters used.
+There are two types of rate limiters used.
 
 ### Examples: 
-The generic rate-limiter:
+The generic rate limiter:
 
 ```go
     l := NewLimiter(context.TODO(), 8, time.Second * 5)
@@ -26,7 +26,7 @@ The generic rate-limiter:
             // some API request with weight (if requests are differentiated)
         })
 ```
-
+Keyed rate limiter
 ```go
     l := NewKeyLimiter(context.TODO())
     defer l.DeleteKeys() 
