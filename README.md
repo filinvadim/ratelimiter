@@ -1,4 +1,4 @@
-# Sliding window log rate limiter
+# Weighted sliding window log rate limiter
 
 A thread-safe rate limiter library for Golang inspired but unsatisfied by https://github.com/Narasimha1997/ratelimiter and https://github.com/uber-go/ratelimit
 
