@@ -171,3 +171,59 @@ func TestLimiter_ParallelExecution(t *testing.T) {
 		t.Fatalf("Expected 10 parallel requests to complete, but got %d", completed)
 	}
 }
+
+func TestLimiter_IntervalAccuracy(t *testing.T) {
+	limit := uint32(10)
+	interval := 1 * time.Second
+	limiter := NewLimiter(limit, interval)
+
+	start := time.Now()
+	limiter.Limit(10, func() {})
+	time.Sleep(100 * time.Millisecond) // let the limiter process the task
+
+	if limiter.totalWeight.Load() != 10 {
+		t.Fatalf("Expected total weight to be 10 immediately after request")
+	}
+
+	time.Sleep(interval)
+
+	limiter.Limit(1, func() {})
+
+	if limiter.totalWeight.Load() > 1 {
+		t.Fatalf("Expected total weight to reset after interval, but got %d", limiter.totalWeight.Load())
+	}
+
+	if time.Since(start) < interval {
+		t.Fatalf("Expected at least interval duration to pass, got %s", time.Since(start))
+	}
+}
+
+func TestLimiter_Concurrency(t *testing.T) {
+	limit := uint32(1000)
+	interval := 50 * time.Millisecond
+	limiter := NewLimiter(limit, interval)
+
+	var wg sync.WaitGroup
+	for i := 0; i < 1000; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			limiter.Limit(1, func() {})
+		}()
+	}
+
+	wg.Wait()
+
+	if limiter.totalWeight.Load() != 1000 {
+		t.Fatalf("Expected total weight of 1000, got %d", limiter.totalWeight.Load())
+	}
+
+	// Wait for the interval to pass and check if the limiter resets correctly
+	time.Sleep(interval + 10*time.Millisecond)
+
+	limiter.Limit(1, func() {})
+
+	if limiter.totalWeight.Load() > 1 {
+		t.Fatalf("Expected total weight to reset to 1 after interval, but got %d", limiter.totalWeight.Load())
+	}
+}
