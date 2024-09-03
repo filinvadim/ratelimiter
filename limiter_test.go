@@ -55,7 +55,7 @@ func TestLimiter_WithinLimit(t *testing.T) {
 	wg.Wait()
 
 	if completed != 10 {
-		t.Errorf("Expected 10 completed requests, but got %d", completed)
+		t.Fatalf("Expected 10 completed requests, but got %d", completed)
 	}
 }
 
@@ -82,11 +82,11 @@ func TestLimiter_ExceedLimit(t *testing.T) {
 
 	duration := time.Since(start)
 	if duration < interval {
-		t.Errorf("Expected at least %v wait time, but got %v", interval, duration)
+		t.Fatalf("Expected at least %v wait time, but got %v", interval, duration)
 	}
 
 	if completed != 12 {
-		t.Errorf("Expected 12 completed requests, but got %d", completed)
+		t.Fatalf("Expected 12 completed requests, but got %d", completed)
 	}
 }
 
@@ -111,7 +111,7 @@ func TestLimiter_WeightedRequests(t *testing.T) {
 	wg.Wait()
 
 	if completed != 5 {
-		t.Errorf("Expected 5 completed weighted requests, but got %d", completed)
+		t.Fatalf("Expected 5 completed weighted requests, but got %d", completed)
 	}
 }
 
@@ -138,11 +138,11 @@ func TestLimiter_ExceedWeightedLimit(t *testing.T) {
 
 	duration := time.Since(start)
 	if duration < interval {
-		t.Errorf("Expected at least %v wait time, but got %v", interval, duration)
+		t.Fatalf("Expected at least %v wait time, but got %v", interval, duration)
 	}
 
 	if completed != 6 {
-		t.Errorf("Expected 6 completed weighted requests, but got %d", completed)
+		t.Fatalf("Expected 6 completed weighted requests, but got %d", completed)
 	}
 }
 
@@ -168,6 +168,6 @@ func TestLimiter_ParallelExecution(t *testing.T) {
 	wg.Wait()
 
 	if completed != 10 {
-		t.Errorf("Expected 10 parallel requests to complete, but got %d", completed)
+		t.Fatalf("Expected 10 parallel requests to complete, but got %d", completed)
 	}
 }

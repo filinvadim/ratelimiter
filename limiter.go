@@ -56,7 +56,10 @@ func (l *Limiter) Limit(weight uint32, fn func()) {
 	l.tasks = l.tasks[i:]
 
 	isLimited := l.totalWeight.Load()+weight > l.limit.Load()
-
+	firstTaskTime := now.Add(l.interval) // time that doesn't require to wait if there are no tasks
+	if len(l.tasks) > 0 {
+		firstTaskTime = l.tasks[0].tm
+	}
 	if !isLimited {
 		l.totalWeight.Add(weight)
 		l.tasks = append(l.tasks, task{now, weight})
@@ -65,7 +68,7 @@ func (l *Limiter) Limit(weight uint32, fn func()) {
 	}
 	l.tasksMx.Unlock()
 
-	timeToWait := l.tasks[0].tm.Add(l.interval).Sub(now)
+	timeToWait := firstTaskTime.Add(l.interval).Sub(now)
 
 	l.limitMx.Lock()
 	time.Sleep(timeToWait) // rate limited here
