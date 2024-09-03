@@ -80,6 +80,10 @@ func TestLimiter_ExceedLimit(t *testing.T) {
 
 	wg.Wait()
 
+	if !limiter.IsLocked() {
+		t.Fatalf("Expected limiter to be locked")
+	}
+
 	duration := time.Since(start)
 	if duration < interval {
 		t.Fatalf("Expected at least %v wait time, but got %v", interval, duration)
@@ -135,7 +139,9 @@ func TestLimiter_ExceedWeightedLimit(t *testing.T) {
 	}
 
 	wg.Wait()
-
+	if !limiter.IsLocked() {
+		t.Fatalf("Expected limiter to be locked")
+	}
 	duration := time.Since(start)
 	if duration < interval {
 		t.Fatalf("Expected at least %v wait time, but got %v", interval, duration)
