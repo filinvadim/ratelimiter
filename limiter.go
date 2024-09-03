@@ -1,81 +1,86 @@
 package ratelimiter
 
 import (
-	"context"
 	"sync"
 	"sync/atomic"
 	"time"
 )
 
-// Limiter Weighted Sliding Window Log.
-type Limiter struct {
-	interval    time.Duration
-	limit       uint32
-	storedLimit uint32
-	requests    []time.Time
-	mx          *sync.Mutex
-	ctx         context.Context
-	isClosed    *atomic.Bool
+type task struct {
+	tm     time.Time
+	weight uint32
 }
 
-func NewLimiter(ctx context.Context, limit uint32, interval time.Duration) *Limiter {
+// Limiter Weighted Sliding Window Log.
+type Limiter struct {
+	interval time.Duration
+	tasks    []task
+
+	limit, totalWeight *atomic.Uint32
+
+	limitMx, tasksMx *sync.Mutex
+}
+
+func NewLimiter(limit uint32, interval time.Duration) *Limiter {
+	atomicLimit := new(atomic.Uint32)
+	atomicLimit.Store(limit)
+
 	return &Limiter{
 		interval:    interval,
-		limit:       limit,
-		storedLimit: limit,
-		requests:    make([]time.Time, 0, limit),
-		mx:          new(sync.Mutex),
-		ctx:         ctx,
-		isClosed:    new(atomic.Bool),
+		limit:       atomicLimit,
+		totalWeight: new(atomic.Uint32),
+		tasks:       make([]task, 0, limit),
+		tasksMx:     new(sync.Mutex),
+		limitMx:     new(sync.Mutex),
 	}
 }
 
 func (l *Limiter) Limit(weight uint32, fn func()) {
-	l.mx.Lock()
-	defer l.mx.Unlock()
+	defer fn()
 
 	if weight == 0 {
 		weight = 1
 	}
-	now := time.Now()
 
-	cutoff := now.Add(-l.interval)
-	i := 0
-	for i < len(l.requests) && l.requests[i].Before(cutoff) {
+	var (
+		now    = time.Now()
+		cutoff = now.Add(-l.interval)
+		i      = 0
+	)
+
+	l.tasksMx.Lock()
+	for i < len(l.tasks) && l.tasks[i].tm.Before(cutoff) {
+		l.totalWeight.Add(-l.tasks[i].weight) // remove weight of expired tasks
 		i++
 	}
-	l.requests = l.requests[i:]
+	l.tasks = l.tasks[i:]
 
-	if weight <= l.limit {
-		l.requests = append(l.requests, now)
-		l.limit -= weight
-	} else {
-		timeToWait := l.requests[0].Add(l.interval).Sub(now)
-		l.limit = l.storedLimit
+	isLimited := l.totalWeight.Load()+weight > l.limit.Load()
 
-		if l.ctx.Err() != nil {
-			return
-		}
-
-		time.Sleep(timeToWait) // rate limited here
-	}
-	if l.ctx.Err() != nil {
+	if !isLimited {
+		l.totalWeight.Add(weight)
+		l.tasks = append(l.tasks, task{now, weight})
+		l.tasksMx.Unlock()
 		return
 	}
-	if l.isClosed.Load() {
-		return
-	}
+	l.tasksMx.Unlock()
 
-	fn()
+	timeToWait := l.tasks[0].tm.Add(l.interval).Sub(now)
+
+	l.limitMx.Lock()
+	time.Sleep(timeToWait) // rate limited here
+	l.limitMx.Unlock()
+
+	l.tasksMx.Lock()
+	l.totalWeight.Add(weight)
+	l.tasks = append(l.tasks, task{now, weight})
+	l.tasksMx.Unlock()
 }
 
 func (l *Limiter) IsLocked() bool {
-	l.mx.Lock()
-	defer l.mx.Unlock()
-
-	return l.limit == 0
+	return l.limit.Load() == 0
 }
 
 func (l *Limiter) Close() {
-	l.isClosed.Store(true)
+	// TODO
 }

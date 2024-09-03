@@ -1,7 +1,6 @@
 package ratelimiter
 
 import (
-	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -9,7 +8,7 @@ import (
 
 func TestKeyLimiterGetSetDelete(t *testing.T) {
 	key := "test"
-	l := NewKeyLimiter(context.TODO())
+	l := NewKeyLimiter()
 	l.RegisterKey(key, 5, time.Second)
 	if !l.HasKey(key) {
 		t.Fatal("expected existing key:", key)
@@ -24,7 +23,7 @@ func testKeyLimiterAccuracy(t *testing.T) {
 	limit := 8
 	window := 5 * time.Second
 
-	l := NewKeyLimiter(context.TODO())
+	l := NewKeyLimiter()
 	defer l.DeleteKeys()
 	l.RegisterKey("test", uint32(limit), window)
 
@@ -59,7 +58,7 @@ func TestConcurrentKeyLimiterAccuracy(t *testing.T) {
 	limit := 8
 	window := 5 * time.Second
 
-	l := NewKeyLimiter(context.TODO())
+	l := NewKeyLimiter()
 	defer l.DeleteKeys()
 	l.RegisterKey("test", uint32(limit), window)
 

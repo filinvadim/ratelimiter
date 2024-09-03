@@ -1,20 +1,17 @@
 package ratelimiter
 
 import (
-	"context"
 	"sync"
 	"time"
 )
 
 type KeyLimiter struct {
-	ctx      context.Context
 	mx       *sync.Mutex
 	limiters map[string]*Limiter
 }
 
-func NewKeyLimiter(ctx context.Context) *KeyLimiter {
+func NewKeyLimiter() *KeyLimiter {
 	return &KeyLimiter{
-		ctx:      ctx,
 		mx:       new(sync.Mutex),
 		limiters: make(map[string]*Limiter),
 	}
@@ -29,7 +26,7 @@ func (kl *KeyLimiter) HasKey(key string) bool {
 
 func (kl *KeyLimiter) RegisterKey(key string, limit uint32, interval time.Duration) {
 	kl.mx.Lock()
-	kl.limiters[key] = NewLimiter(kl.ctx, limit, interval)
+	kl.limiters[key] = NewLimiter(limit, interval)
 	kl.mx.Unlock()
 }
 

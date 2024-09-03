@@ -18,7 +18,7 @@ There are two types of rate-limiters used.
 The generic rate-limiter:
 
 ```go
-    l := NewLimiter(context.TODO(), 8, time.Second * 5)
+    l := NewLimiter(8, time.Second * 5)
     defer l.Close()
 	
     for i := 0; i < 10; i++ {
@@ -28,7 +28,7 @@ The generic rate-limiter:
 ```
 
 ```go
-    l := NewKeyLimiter(context.TODO())
+    l := NewKeyLimiter()
     defer l.DeleteKeys() 
     l.RegisterKey("test", uint32(limit), window)
     // or l.DeleteKeys("test")
