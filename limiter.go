@@ -81,7 +81,7 @@ func (l *Limiter) Limit(weight uint32, fn func()) {
 }
 
 func (l *Limiter) IsLocked() bool {
-	return l.limit.Load() == 0
+	return l.totalWeight.Load() >= l.limit.Load()
 }
 
 func (l *Limiter) Close() {
