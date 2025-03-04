@@ -19,7 +19,7 @@ func main() {
 	// Rate Limit: 1 request per 5 seconds
 	url := "https://www.okex.com/api/system/v3/status"
 	window := (5 * time.Second) + (time.Millisecond * 150) // 150ms gap to align with okex server time
-	l := ratelimiter.NewLimiter(1, window)
+	l := ratelimiter.NewLimiter(1, window, nil)
 	defer l.Close()
 
 	for {

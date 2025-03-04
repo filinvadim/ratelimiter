@@ -11,7 +11,7 @@ func TestConcurrentLimiterAccuracy(t *testing.T) {
 	limit := 8
 	window := 5 * time.Second
 
-	l := NewLimiter(uint32(limit), window)
+	l := NewLimiter(uint32(limit), window, nil)
 	defer l.Close()
 
 	attempts := 10
@@ -37,7 +37,7 @@ func TestConcurrentLimiterAccuracy(t *testing.T) {
 func TestLimiter_WithinLimit(t *testing.T) {
 	limit := uint32(10)
 	interval := 100 * time.Millisecond
-	limiter := NewLimiter(limit, interval)
+	limiter := NewLimiter(limit, interval, nil)
 
 	var wg sync.WaitGroup
 	var completed uint32
@@ -62,7 +62,7 @@ func TestLimiter_WithinLimit(t *testing.T) {
 func TestLimiter_ExceedLimit(t *testing.T) {
 	limit := uint32(10)
 	interval := 100 * time.Millisecond
-	limiter := NewLimiter(limit, interval)
+	limiter := NewLimiter(limit, interval, nil)
 
 	var wg sync.WaitGroup
 	var completed uint32
@@ -97,7 +97,7 @@ func TestLimiter_ExceedLimit(t *testing.T) {
 func TestLimiter_WeightedRequests(t *testing.T) {
 	limit := uint32(10)
 	interval := 100 * time.Millisecond
-	limiter := NewLimiter(limit, interval)
+	limiter := NewLimiter(limit, interval, nil)
 
 	var wg sync.WaitGroup
 	var completed uint32
@@ -122,7 +122,7 @@ func TestLimiter_WeightedRequests(t *testing.T) {
 func TestLimiter_ExceedWeightedLimit(t *testing.T) {
 	limit := uint32(10)
 	interval := 100 * time.Millisecond
-	limiter := NewLimiter(limit, interval)
+	limiter := NewLimiter(limit, interval, nil)
 
 	var wg sync.WaitGroup
 	var completed uint32
@@ -155,7 +155,7 @@ func TestLimiter_ExceedWeightedLimit(t *testing.T) {
 func TestLimiter_ParallelExecution(t *testing.T) {
 	limit := uint32(10)
 	interval := 100 * time.Millisecond
-	limiter := NewLimiter(limit, interval)
+	limiter := NewLimiter(limit, interval, nil)
 
 	var wg sync.WaitGroup
 	var completed uint32
@@ -181,7 +181,7 @@ func TestLimiter_ParallelExecution(t *testing.T) {
 func TestLimiter_IntervalAccuracy(t *testing.T) {
 	limit := uint32(10)
 	interval := 1 * time.Second
-	limiter := NewLimiter(limit, interval)
+	limiter := NewLimiter(limit, interval, nil)
 
 	start := time.Now()
 	limiter.Limit(10, func() {})
@@ -207,7 +207,7 @@ func TestLimiter_IntervalAccuracy(t *testing.T) {
 func TestLimiter_Concurrency(t *testing.T) {
 	limit := uint32(1000)
 	interval := 50 * time.Millisecond
-	limiter := NewLimiter(limit, interval)
+	limiter := NewLimiter(limit, interval, nil)
 
 	var wg sync.WaitGroup
 	for i := 0; i < 1000; i++ {

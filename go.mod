@@ -1,3 +1,3 @@
 module github.com/filinvadim/ratelimiter
 
-go 1.22
+go 1.24

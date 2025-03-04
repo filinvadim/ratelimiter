@@ -26,7 +26,7 @@ func (kl *KeyLimiter) HasKey(key string) bool {
 
 func (kl *KeyLimiter) RegisterKey(key string, limit uint32, interval time.Duration) {
 	kl.mx.Lock()
-	kl.limiters[key] = NewLimiter(limit, interval)
+	kl.limiters[key] = NewLimiter(limit, interval, nil)
 	kl.mx.Unlock()
 }
 
@@ -60,18 +60,24 @@ func (kl *KeyLimiter) DeleteKeys(keys ...string) {
 	defer kl.mx.Unlock()
 
 	if keys == nil {
-		for k, lim := range kl.limiters {
-			lim := lim
-			lim.Close()
+		for k, _ := range kl.limiters {
 			delete(kl.limiters, k)
 		}
 		return
 	}
 	for _, key := range keys {
-		if limiter, ok := kl.limiters[key]; ok {
-			limiter.Close()
+		if _, ok := kl.limiters[key]; ok {
 			delete(kl.limiters, key)
 		}
 	}
+}
 
+func (kl *KeyLimiter) Close() {
+	kl.mx.Lock()
+	defer kl.mx.Unlock()
+
+	for _, limiter := range kl.limiters {
+		limiter.Close()
+	}
+	kl.limiters = nil
 }
