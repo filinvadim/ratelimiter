@@ -8,7 +8,7 @@ import (
 
 func TestKeyLimiterGetSetDelete(t *testing.T) {
 	key := "test"
-	l := NewKeyLimiter()
+	l := NewKeyLimiter(nil)
 	l.RegisterKey(key, 5, time.Second)
 	if !l.HasKey(key) {
 		t.Fatal("expected existing key:", key)
@@ -23,7 +23,7 @@ func testKeyLimiterAccuracy(t *testing.T) {
 	limit := 8
 	window := 5 * time.Second
 
-	l := NewKeyLimiter()
+	l := NewKeyLimiter(nil)
 	defer l.DeleteKeys()
 	l.RegisterKey("test", uint32(limit), window)
 
@@ -58,7 +58,7 @@ func TestConcurrentKeyLimiterAccuracy(t *testing.T) {
 	limit := 8
 	window := 5 * time.Second
 
-	l := NewKeyLimiter()
+	l := NewKeyLimiter(nil)
 	defer l.DeleteKeys()
 	l.RegisterKey("test", uint32(limit), window)
 

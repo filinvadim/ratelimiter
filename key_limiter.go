@@ -8,12 +8,14 @@ import (
 type KeyLimiter struct {
 	mx       *sync.Mutex
 	limiters map[string]*Limiter
+	storage  TaskQueueStorer
 }
 
-func NewKeyLimiter() *KeyLimiter {
+func NewKeyLimiter(storage TaskQueueStorer) *KeyLimiter {
 	return &KeyLimiter{
 		mx:       new(sync.Mutex),
 		limiters: make(map[string]*Limiter),
+		storage:  storage,
 	}
 }
 
@@ -26,7 +28,7 @@ func (kl *KeyLimiter) HasKey(key string) bool {
 
 func (kl *KeyLimiter) RegisterKey(key string, limit uint32, interval time.Duration) {
 	kl.mx.Lock()
-	kl.limiters[key] = NewLimiter(limit, interval, nil)
+	kl.limiters[key] = NewLimiter(limit, interval, kl.storage)
 	kl.mx.Unlock()
 }
 
